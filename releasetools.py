@@ -16,7 +16,6 @@
 """Emit commands needed for QCOM devices during OTA installation
 (installing the radio image)."""
 
-import hashlib
 import common
 import re
 
@@ -24,7 +23,7 @@ def LoadFilesMap(zip):
   try:
     data = zip.read("RADIO/filesmap")
   except KeyError:
-    print "Warning: could not find RADIO/filesmap in %s." % zip
+    print ("Warning: could not find RADIO/filesmap in %s." % zip)   
     data = ""
   d = {}
   for line in data.split("\n"):
@@ -47,16 +46,6 @@ def GetRadioFiles(z):
       out[fn] = fn
   return out
 
-def FullOTA_Assertions(info):
-  AddBasebandAssertion(info)
-  AddTrustZoneAssertion(info)
-  return
-
-def IncrementalOTA_Assertions(info):
-  AddBasebandAssertion(info)
-  AddTrustZoneAssertion(info)
-  return
-
 def InstallRawImage(image_data, api_version, input_zip, fn, info, filesmap):
   #fn is in RADIO/* format. Extracting just file name.
   filename = fn[6:]
@@ -75,18 +64,18 @@ def InstallRawImage(image_data, api_version, input_zip, fn, info, filesmap):
     common.ZipWriteStr(info.output_zip, filename, image_data)
     return
   else:
-    print "warning radio-update: no support for api_version less than 3."
+    print ("warning radio-update: no support for api_version less than 3.")
 
 def InstallRadioFiles(info):
   files = GetRadioFiles(info.input_zip)
   if files == {}:
-    print "warning radio-update: no radio image in input target_files; not flashing radio"
+    print ("warning radio-update: no radio image in input target_files; not flashing radio")
     return
   info.script.Print("Writing radio image...")
   #Load filesmap file
   filesmap = LoadFilesMap(info.input_zip)
   if filesmap == {}:
-      print "warning radio-update: no or invalid filesmap file found. not flashing radio"
+      print ("warning radio-update: no or invalid filesmap file found. not flashing radio")
       return
   if hasattr(info, 'source_zip'):
       source_filesmap = LoadFilesMap(info.source_zip)
@@ -98,7 +87,7 @@ def InstallRadioFiles(info):
         source_checksum = source_filesmap.get(filename, [None, 'no_source'])[1]
         target_checksum = filesmap.get(filename, [None, 'no_target'])[1]
         if source_checksum == target_checksum:
-            print "info radio-update: source and target match for %s... skipping" % filename
+            print ("info radio-update: source and target match for %s... skipping" % filename)
             continue
     image_data = info.input_zip.read(f)
     InstallRawImage(image_data, info.input_version, info.input_zip, f, info, filesmap)
@@ -121,19 +110,5 @@ def AddBasebandAssertion(info):
     versions = m.group(1).split('|')
     if len(versions) and '*' not in versions:
       cmd = 'assert(cm.verify_baseband(' + ','.join(['"%s"' % baseband for baseband in versions]) + ') == "1");'
-      info.script.AppendExtra(cmd)
-  return
-
-def AddTrustZoneAssertion(info):
-  # Presence of filesmap indicates packaged firmware
-  filesmap = LoadFilesMap(info.input_zip)
-  if filesmap != {}:
-    return
-  android_info = info.input_zip.read("OTA/android-info.txt")
-  m = re.search(r'require\s+version-trustzone\s*=\s*(\S+)', android_info)
-  if m:
-    versions = m.group(1).split('|')
-    if len(versions) and '*' not in versions:
-      cmd = 'assert(cm.verify_trustzone(' + ','.join(['"%s"' % tz for tz in versions]) + ') == "1");'
       info.script.AppendExtra(cmd)
   return

@@ -1,3 +1,6 @@
+#type mm-qcamerad, file_type;
+#type mpctl_socket, file_type;
+#type perfd, domain;
 allow mm-qcamerad camera_data_file:dir r_dir_perms;
 allow mm-qcamerad mpctl_socket:dir search;
 unix_socket_connect(mm-qcamerad, mpctl, perfd)

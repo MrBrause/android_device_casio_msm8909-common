@@ -1,3 +1,4 @@
+#type time_data_file, file_type, data_file_type;
 # Policy for the timekeep.c oneshot system service
 # Gets called once during init by vendor timekeep.rc and restores
 # clock from persist.vendor.timeadjust property, reads

@@ -1,1 +1,2 @@
+#type netmgrd, domain;
 allow netmgrd self:capability dac_override;
